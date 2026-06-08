@@ -69,12 +69,14 @@ void http_callback(WFHttpTask *httptask)
         "mysql://root:123456@localhost:3306/demo",
         3,mysql_callback
     );
-    
+
     // 4、设置MySQL任务的参数
     string url = static_cast<char*>(httptask->user_data);
     string sql = "insert into tbl_webpage(url,size) values('"+ url + "' , " + to_string(size) + " )";
     cout << "[SQL]" << sql << endl;
 
+    // 设置SQL语句到MySQL任务
+    mysqlTask->get_req()->set_query(sql);
     // 5、将MySQL任务添加到序列中
     series->push_back(mysqlTask);
 }
@@ -148,4 +150,3 @@ int main(int argc,char *argv[])
 
     return 0;
 }
-

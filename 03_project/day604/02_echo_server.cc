@@ -16,6 +16,18 @@
 using namespace std;
 using namespace protocol;
 
+/*
+    客户端发送HTTP请求
+        ↓
+    服务器收到请求
+        ↓
+    打印客户端IP和请求序号
+        ↓
+    把请求内容组织成HTML
+        ↓
+    返回给浏览器
+ */
+
 WFFacilities::WaitGroup waitGroup(1);
 
 void sig_handler(int)
@@ -29,6 +41,7 @@ void process(WFHttpTask* task)
     // 获取对端地址
     struct sockaddr_storage addr;
     socklen_t length = sizeof(addr); // 传入传出参数
+    // 获取到客户端ip 和 端口号
     task->get_peer_addr((struct sockaddr*)&addr, &length);
     // 套接字地址 --> IP:port
     char ipstr[INET6_ADDRSTRLEN];
