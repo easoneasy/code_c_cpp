@@ -17,6 +17,7 @@ using namespace std::placeholders;
 using namespace wfrest;
 using namespace protocol;
 using json = nlohmann::json;
+using namespace AlibabaCloud::OSS;
 
 // 数据库的URL（需要修改！）
 static const string DatabaseURL = "mysql://root:123456@localhost/CloudDisk";
@@ -162,7 +163,6 @@ void login_handler(const HttpReq *req,HttpResp *resp)
     string password = data["password"];
     // 通过用户名查找hashcode、salt
     string sql = "select * from tbl_user where username = '" + username +"';";
-    // cout << "[SQL]" << sql << endl;
 
     resp->MySQL(DatabaseURL,sql,[resp,password](MySQLResultCursor *cursor)
         {
@@ -247,7 +247,6 @@ void file_list_handler(const HttpReq *req,HttpResp *resp)
 
     // 拼接sql语句，查询文件信息
     string sql = "select * from tbl_file where uid = '" + to_string(uid) + "';";
-    cout << "[sql] "<< sql << endl;
     resp->MySQL(DatabaseURL,sql,[resp](MySQLResultCursor *cursor)
         {
             if(cursor->get_cursor_status()!=MYSQL_STATUS_GET_RESULT)
@@ -307,10 +306,18 @@ void file_upload_handler(const HttpReq *req,HttpResp *resp)
     // 计算文件的哈希值
     string hashcode = CryptoUtil::generate_hashcode(file_data.c_str(), file_data.size());
     // 判断存储目录是否存在
-    ensure_storage_dir();
-    // 存储文件
-    string basename = STORAGE_DIR +"/" + hashcode;
-    resp->Save(basename,file_data);
+    // ensure_storage_dir();
+    // 本地存储文件
+    // string basename = STORAGE_DIR +"/" + hashcode;
+    // resp->Save(basename,file_data);
+    // 单例对象，将文件的哈希与文件内容传给单例对象
+    // 上传到云存储
+    bool isUpload = OSSManager::getInstance().upload(hashcode, file_data);
+    if(!isUpload)
+    {
+        send_error(resp, 400, "云备份失败");
+        return;
+    }
     //
     // 插入数据库
     string sql = "insert into tbl_file (uid,filename,hashcode,size) values("
@@ -369,8 +376,16 @@ void file_download_handler(const HttpReq *req,HttpResp *resp)
                 send_error(resp,404, "文件不存在");
                 return;
             }
+            string file_data;
             // 读盘
-            resp->File(STORAGE_DIR + "/" + db_hashcode);
+            // resp->File(STORAGE_DIR + "/" + db_hashcode);
+            bool isDownload = OSSManager::getInstance().download(db_hashcode,file_data);
+            if(!isDownload)
+            {
+                send_error(resp, 500, "云下载失败");
+                return;
+            }
+            resp->String(file_data);
         });
 }
 
@@ -382,7 +397,6 @@ void CloudDiskServer::register_routes()
     register_auth_module();
     register_user_module();
     register_file_module();
-    // ...
 }
 
 void CloudDiskServer::register_www_module()
