@@ -1,5 +1,8 @@
 #include "../include/OssManager.h"
+#include <iostream>
 #include <sstream>
+#include <fstream>
+#include <nlohmann/json.hpp>
 #include <alibabacloud/oss/model/GetObjectRequest.h>
 #include <alibabacloud/oss/client/ClientConfiguration.h>
 #include <alibabacloud/oss/model/PutObjectRequest.h>
@@ -7,6 +10,8 @@
 
 using namespace std;
 using namespace AlibabaCloud::OSS;
+using json = nlohmann::json;
+
 
 // 创建单例对象
 OSSManager &OSSManager::getInstance()
@@ -17,16 +22,24 @@ OSSManager &OSSManager::getInstance()
 
 // 构造函数
 OSSManager::OSSManager()
-:_bucketName("jo-bucket")
 {
+    // 读取配置文件,获取OSS账号信息
+    ifstream ifs{"config.json"};
+    if(!ifs.is_open())
+    {
+        cerr << "Error : connot open config.json" << endl;
+        abort();
+    }
+    json config = json::parse(ifs);
+    ifs.close();
+    string endpoint = config["endpoint"];
+    string accessKeyId = config["accessKeyId"];
+    string accessKeySecret = config["accessKeySecret"];
+    _bucketName = config["buketName"];
+    string region = config["region"];
+
     // 初始化网络资源
     InitializeSdk();
-
-    // 设置OSS账号信息，创建OssClient
-    string endpoint = "oss-cn-wuhan-lr.aliyuncs.com";
-    string accessKeyId = "LTAI5t8kNWH4c5FaSFExmMfg";
-    string accessKeySecret = "8b0dMuaCmvm7DqzhynI0m5PB0ND6r2";
-    string region = "cn-wuhan";
 
     // 客户端配置对象
     ClientConfiguration conf;

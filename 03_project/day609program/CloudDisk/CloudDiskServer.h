@@ -122,14 +122,14 @@ class OSSManager
 
         // 构造函数私有
         OSSManager()
-        :_bucketName("jo-bucket")
+        :_bucketName("bucketName")
         {
             // 初始化网络资源
             InitializeSdk();
             // 设置OSS账号信息，创建OssClient
             string endpoint = "oss-cn-wuhan-lr.aliyuncs.com";
-            string accessKeyId = "LTAI5t8kNWH4c5FaSFExmMfg";
-            string accessKeySecret = "8b0dMuaCmvm7DqzhynI0m5PB0ND6r2";
+            string accessKeyId = "xxx";
+            string accessKeySecret = "xxx";
             string region = "cn-wuhan";
 
             // 客户端配置对象
